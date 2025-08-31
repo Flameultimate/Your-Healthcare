@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Health Universe — FeverCare Pro</title>
+<style>
+  :root{
+    --bg:#090914;--panel:#141428;--panel-2:#1a1a33;--ink:#eaf6ff;
+    --accent:#00e0ff;--accent-2:#9dff6b;--warn:#ffcc00;--danger:#ff6b6b;
+    --muted:#95a3b3;--good:#52ffa6;--card:#0e0e1f;--comic:#ff3c7d;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;font-family:"Poppins",system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,"Noto Sans",sans-serif;
+    color:var(--ink);background:radial-gradient(1200px 600px at 70% -20%,#112,#000 70%);
+    overflow:hidden;
+  }
+  /* Animated starfield (pure CSS, no images) */
+  .stars, .stars:before, .stars:after{
+    position:fixed;left:0;top:0;width:200%;height:200%;
+    background:transparent radial-gradient(#fff 1px, transparent 1.5px) repeat;
+    background-size:3px 3px;opacity:.2;animation: drift 120s linear infinite;
+    pointer-events:none;z-index:0;
+  }
+  .stars:before{content:"";opacity:.12;transform:scale(0.8);animation-duration:180s}
+  .stars:after {content:"";opacity:.08;transform:scale(0.6);animation-duration:240s}
+  @keyframes drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(-50%, -50%,0)}}
+
+  header{
+    position:relative;z-index:2;background:linear-gradient(90deg,#0c0c18, #111133);
+    border-bottom:1px solid #22244a;display:flex;align-items:center;gap:14px;
+    padding:12px 18px;font-weight:700;letter-spacing:.5px;
+  }
+  header .logo{
+    width:34px;height:34px;border-radius:10px;background:conic-gradient(from 0deg,#00e0ff,#7a5cff,#00e0ff);
+    box-shadow:0 0 20px #00e0ff55 inset,0 0 25px #00e0ff33;
+  }
+  header .title{font-size:18px}
+  header .sub{font-size:12px;color:var(--muted)}
+
+  .app{
+    position:relative;z-index:2;height:calc(100% - 64px);display:grid;
+    grid-template-columns:280px 1fr;gap:0;overflow:hidden;
+  }
+  aside{
+    background:linear-gradient(180deg,#101024,#0b0b17);
+    border-right:1px solid #24244a;display:flex;flex-direction:column;overflow:auto;
+  }
+  .nav{
+    padding:14px;
+  }
+  .nav button{
+    width:100%;text-align:left;border:0;padding:12px 12px;margin:6px 0;border-radius:12px;
+    background:var(--panel);color:var(--ink);cursor:pointer;font-weight:600;
+    display:flex;align-items:center;gap:10px;transition:transform .08s ease, background .2s;
+    border:1px solid #22224a;
+  }
+  .nav button:hover{transform:translateY(-1px);background:var(--panel-2)}
+  .nav button.active{outline:2px solid var(--accent);background:#0c0c1d}
+
+  .token-bar{
+    margin:10px 14px;padding:12px;border-radius:12px;background:linear-gradient(180deg,#0b1a1a,#0e0e1c);
+    border:1px solid #193a3a;display:flex;align-items:center;justify-content:space-between;
+  }
+  .token-badge{
+    padding:6px 10px;border-radius:999px;background:#002b2b;color:#a8ffea;border:1px solid #0aa;
+    font-weight:700
+  }
+
+  main{background:linear-gradient(180deg,#0a0a18,#0b0b1f);position:relative;overflow:auto}
+  .page{display:none;padding:22px 22px 120px;max-width:1120px;margin:0 auto}
+  .page.active{display:block}
+
+  /* Panels & cards */
+  .grid{
+    display:grid;grid-template-columns:1fr 1fr;gap:16px
+  }
+  .panel{
+    background:var(--panel);border:1px solid #23234a;border-radius:16px;padding:16px;position:relative;
+    box-shadow:0 10px 24px #00000055;
+  }
+  .panel h3{margin:0 0 10px 0}
+  .muted{color:var(--muted);font-size:13px}
+
+  /* Inputs */
+  .row{display:flex;gap:10px;flex-wrap:wrap}
+  .row .col{flex:1 1 180px}
+  input, select, textarea{
+    width:100%;padding:12px 14px;border-radius:10px;border:1px solid #2a2a52;background:#0e0e1e;
+    color:var(--ink);outline:none
+  }
+  textarea{min-height:120px;resize:vertical}
+
+  .btn{
+    border:0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;color:#041016;
+    background:linear-gradient(180deg,#00e0ff,#5cf4ff);box-shadow:0 6px 0 #009ab1;
+    transition:transform .05s ease, filter .2s
+  }
+  .btn:hover{filter:brightness(1.05)}
+  .btn:active{transform:translateY(2px);box-shadow:0 4px 0 #009ab1}
+  .btn.ghost{background:#1b1b34;color:#cfeaf7;border:1px solid #2b2b54;box-shadow:none}
+
+  /* Comic dashboard look */
+  .comic{
+    background:linear-gradient(180deg,#12122a,#17173a);border:2px solid #2b2b66;
+    border-radius:18px;padding:16px;position:relative;box-shadow:6px 6px 0 #0a0a20;
+  }
+  .bubble{
+    position:relative;background:#13132b;border:2px solid #2d2d66;border-radius:16px;padding:12px 14px;
+    box-shadow:4px 4px 0 #0a0a20;display:inline-block;max-width:100%;
+  }
+  .bubble:after{
+    content:"";position:absolute;left:18px;bottom:-12px;border-width:12px 10px 0 10px;border-style:solid;
+    border-color:#2d2d66 transparent transparent transparent;filter:drop-shadow(4px 0 #0a0a20);
+  }
+
+  /* Toast notification */
+  .toast{
+    position:fixed;bottom:18px;right:18px;background:#0b1822;border:1px solid #123546;color:#cfeaf7;
+    padding:12px 14px;border-radius:12px;box-shadow:0 10px 24px #00000060;z-index:5;display:none;
+  }
+
+  /* Progress ring */
+  .ring{width:140px;height:140px;display:grid;place-items:center}
+  .ring svg{transform:rotate(-90deg)}
+  .ring .txt{position:absolute;font-weight:800}
+
+  /* Chart canvas holder */
+  .chart{height:160px;background:#0e0e20;border:1px solid #262652;border-radius:12px}
+
+  /* Chat box */
+  .chatbox{height:260px;overflow:auto;background:#0d0d1f;border:1px solid #24244a;border-radius:12px;padding:10px}
+  .msg{margin:8px 0;padding:8px 10px;border-radius:10px;max-width:72%}
+  .msg.user{background:#00e0ff22;border:1px solid #00e0ff55;margin-left:auto}
+  .msg.bot{background:#2a2a55;border:1px solid #3a3a75}
+  .chatrow{display:flex;gap:10px;margin-top:10px}
+  .chatrow input{flex:1}
+  .small{font-size:12px}
+
+  /* Footer disclaimer */
+  .disclaimer{font-size:12px;color:#99a8b7;margin-top:12px}
+  @media (max-width:980px){
+    .app{grid-template-columns:1fr}
+    aside{height:auto}
+  }
+</style>
+</head>
+<body>
+<div class="stars"></div>
+
+<header>
+  <div class="logo" aria-hidden="true"></div>
+  <div class="title">Health Universe — FeverCare Pro</div>
+  <div class="sub">Interactive post-discharge helper • earn Health Tokens ⭐</div>
+</header>
+
+<div class="app">
+  <aside>
+    <div class="nav">
+      <button class="active" data-page="start">🚀 Start</button>
+      <button data-page="analyze">🧠 AI Analyzer</button>
+      <button data-page="meds">💊 Medicines & Reminders</button>
+      <button data-page="dash">📊 Dashboard</button>
+      <button data-page="notes">🧾 Discharge & Fever Notes</button>
+      <button data-page="chat">💬 Assistant</button>
+      <button data-page="calm">🫁 Quick Calm</button>
+      <button data-page="settings">⚙️ Settings</button>
+    </div>
+
+    <div class="token-bar">
+      <div>
+        <div class="muted small">Health Tokens</div>
+        <div id="tokenCount" style="font-weight:900;font-size:22px">0</div>
+      </div>
+      <div class="token-badge">⭐ HT</div>
+    </div>
+  </aside>
+
+  <main>
+    <!-- START -->
+    <section id="start" class="page active">
+      <div class="grid">
+        <div class="panel comic">
+          <h3>Welcome, Space Traveller 👩‍🚀</h3>
+          <div class="bubble">
+            I’ll keep you on track after discharge — meds, gentle tips, and friendly nudges.
+            Fill this in and hit <b>Analyze</b>.
+          </div>
+          <div style="height:8px"></div>
+          <div class="row">
+            <div class="col"><label class="small muted">Name</label><input id="name" placeholder="e.g., Sam" /></div>
+            <div class="col"><label class="small muted">Age</label><input id="age" type="number" min="1" placeholder="e.g., 28" /></div>
+          </div>
+          <div class="row">
+            <div class="col"><label class="small muted">Weight (kg)</label><input id="weight" type="number" min="10" placeholder="e.g., 65" /></div>
+            <div class="col"><label class="small muted">Blood Pressure (e.g., 120/80)</label><input id="bp" placeholder="e.g., 118/76" /></div>
+          </div>
+          <div class="row">
+            <div class="col">
+              <label class="small muted">Fever Type</label>
+              <select id="fever">
+                <option value="">Select…</option>
+                <option value="viral">Viral Fever</option>
+                <option value="flu">Seasonal Flu</option>
+                <option value="covid">COVID-like Symptoms</option>
+                <option value="dengue">Dengue</option>
+                <option value="malaria">Malaria</option>
+                <option value="typhoid">Typhoid</option>
+                <option value="uti">Fever with UTI</option>
+                <option value="postop">Post-operative Fever</option>
+              </select>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn" id="goAnalyze">Analyze 🚀</button>
+            <button class="btn ghost" id="quickDemo">Quick Demo Fill</button>
+          </div>
+          <div class="disclaimer">
+            ⚠️ Educational guidance only. Not a diagnosis. Always follow your clinician’s advice.
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Today’s Mini-Missions</h3>
+          <ul id="missions" class="small">
+            <li>💧 Sip water now (100–200 ml)</li>
+            <li>🧊 Check temperature every 6–8 hours if febrile</li>
+            <li>🛌 Power rest: 20–30 min</li>
+          </ul>
+          <button class="btn" id="missionDone">Mark 1 Mission Done (+5 HT)</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANALYZER -->
+    <section id="analyze" class="page">
+      <div class="grid">
+        <div class="panel comic">
+          <h3>AI Health Snapshot 🧠</h3>
+          <div id="analysisBlock" class="bubble">Fill details on Start → Analyze.</div>
+        </div>
+        <div class="panel">
+          <h3>Suggested Care Plan</h3>
+          <div id="carePlan" class="muted">We’ll tailor this to your fever type and BP pattern.</div>
+          <div style="height:8px"></div>
+          <button id="addPlanMeds" class="btn">Add plan meds to schedule</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MEDS -->
+    <section id="meds" class="page">
+      <div class="grid">
+        <div class="panel comic">
+          <h3>Add Medicine Reminder 💊</h3>
+          <div class="row">
+            <div class="col"><label class="small muted">Medicine Name</label><input id="medName" placeholder="e.g., Paracetamol" /></div>
+            <div class="col"><label class="small muted">Dose</label><input id="medDose" placeholder="e.g., 500 mg" /></div>
+          </div>
+          <div class="row">
+            <div class="col"><label class="small muted">Frequency</label>
+              <select id="medFreq">
+                <option value="once">Once at time</option>
+                <option value="6">Every 6 hours</option>
+                <option value="8">Every 8 hours</option>
+                <option value="12">Every 12 hours</option>
+                <option value="24">Every 24 hours</option>
+              </select>
+            </div>
+            <div class="col">
+              <label class="small muted">Time (HH:MM)</label><input id="medTime" type="time" />
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn" id="addMed">Add Reminder</button>
+            <button class="btn ghost" id="clearMeds">Clear All</button>
+          </div>
+          <div class="disclaimer">⚠️ Doses shown are general examples. Use your doctor’s prescription if it differs.</div>
+        </div>
+
+        <div class="panel">
+          <h3>Your Schedule</h3>
+          <div id="scheduleList" class="small"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- DASHBOARD -->
+    <section id="dash" class="page">
+      <div class="grid">
+        <div class="panel comic">
+          <h3>Comic Dashboard 📊</h3>
+          <div class="row">
+            <div class="col ring">
+              <svg width="140" height="140">
+                <circle cx="70" cy="70" r="58" stroke="#1c1c3d" stroke-width="16" fill="none"></circle>
+                <circle id="ringArc" cx="70" cy="70" r="58" stroke="#00e0ff" stroke-width="16" fill="none" stroke-linecap="round" stroke-dasharray="364 364"></circle>
+              </svg>
+              <div class="txt" id="adherencePct">0%</div>
+            </div>
+            <div class="col">
+              <div class="bubble" id="adherenceBlurb">Stick to your meds today and watch this ring glow.</div>
+              <div style="height:8px"></div>
+              <canvas id="adherenceChart" class="chart" width="480" height="160"></canvas>
+            </div>
+          </div>
+          <div class="row">
+            <button class="btn" id="logTaken">I took a scheduled dose (+3 HT)</button>
+            <button class="btn ghost" id="earnHydrate">Hydration bonus (+1 HT)</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3>Badges & Streaks</h3>
+          <ul id="badges" class="small">
+            <li>🌟 First Reminder Completed</li>
+          </ul>
+          <div class="muted small" id="streakLine">Streak: 0 days</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NOTES -->
+    <section id="notes" class="page">
+      <div class="panel comic">
+        <h3>Discharge & Fever Notes 🧾</h3>
+        <textarea id="feverNotes" placeholder="Which fever, onset, peak temp, warning signs observed…"></textarea>
+        <textarea id="dischargeNotes" placeholder="Hospital, date, meds prescribed, follow-ups, precautions…"></textarea>
+        <button class="btn" id="saveNotes">Save Notes</button>
+        <div class="muted" id="saveStatus"></div>
+      </div>
+    </section>
+
+    <!-- CHAT -->
+    <section id="chat" class="page">
+      <div class="panel comic">
+        <h3>Your Assistant 💬</h3>
+        <div class="chatbox" id="chatbox" aria-live="polite"></div>
+        <div class="chatrow">
+          <input id="chatInput" placeholder="Ask about fever care, meds, hydration…" />
+          <button class="btn" id="sendChat">Send</button>
+        </div>
+        <div class="small muted">Tip: try “what if my BP is 150/95?” or “paracetamol schedule?”</div>
+      </div>
+    </section>
+
+    <!-- CALM -->
+    <section id="calm" class="page">
+      <div class="panel comic" style="text-align:center">
+        <h3>One-Minute Breathing 🫁</h3>
+        <div id="breather" style="margin:14px auto;width:180px;height:180px;border-radius:50%;
+          background:radial-gradient(closest-side,#1ecbe1,#143b49);box-shadow:0 0 60px #0ff5 inset, 0 0 40px #0ff3"></div>
+        <div class="muted">Inhale as the orb expands • Exhale as it shrinks</div>
+        <button class="btn" id="startBreath">Start 60s</button>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="settings" class="page">
+      <div class="panel comic">
+        <h3>Settings ⚙️</h3>
+        <div class="row">
+          <div class="col">
+            <label class="small muted">Enable Browser Notifications</label>
+            <button class="btn" id="enableNotif">Enable</button>
+          </div>
+          <div class="col">
+            <label class="small muted">Notification Sound</label>
+            <select id="soundSelect">
+              <option value="chime">Soft Chime</option>
+              <option value="bell">Light Bell</option>
+              <option value="ping">Cosmic Ping</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn ghost" id="wipeData">Wipe local data</button>
+        <div class="disclaimer">We store your inputs only in your browser (localStorage). No cloud here.</div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- In-page toast + audio -->
+<div class="toast" id="toast"></div>
+<audio id="snd-chime" preload="auto">
+  <source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA..." type="audio/mp3">
+</audio>
+<audio id="snd-bell" preload="auto">
+  <source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA..." type="audio/mp3">
+</audio>
+<audio id="snd-ping" preload="auto">
+  <source src="data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAA..." type="audio/mp3">
+</audio>
+
+<script>
+/* ========= tiny utilities ========= */
+const $ = sel => document.querySelector(sel);
+const $$ = sel => Array.from(document.querySelectorAll(sel));
+const store = (k,v) => localStorage.setItem(k, JSON.stringify(v));
+const load  = (k,d) => {try{const v = JSON.parse(localStorage.getItem(k));return v ?? d}catch{ return d }};
+
+/* ========= navigation ========= */
+$$("aside .nav button").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    $$("aside .nav button").forEach(b=>b.classList.remove("active"));
+    btn.classList.add("active");
+    $$(".page").forEach(p=>p.classList.remove("active"));
+    $("#"+btn.dataset.page).classList.add("active");
+  });
+});
+
+/* ========= demo fill ========= */
+$("#quickDemo").addEventListener("click", ()=>{
+  $("#name").value = "Alex Star";
+  $("#age").value = 26;
+  $("#weight").value = 64;
+  $("#bp").value = "118/76";
+  $("#fever").value = "viral";
+  toast("Demo data filled. Tap Analyze!");
+});
+
+/* ========= missions & tokens ========= */
+let tokens = load("tokens", 0);
+const tokenCount = $("#tokenCount");
+function setTokens(t){ tokens = t; tokenCount.textContent = t; store("tokens", t) }
+setTokens(tokens);
+
+$("#missionDone").addEventListener("click", ()=>{
+  setTokens(tokens+5); toast("Mission complete! +5 Health Tokens ⭐");
+});
+
+/* ========= ANALYZER ========= */
+const FEVER_GUIDE = {
+  viral : { plan:[
+      "Paracetamol (adult: 500 mg) as needed for fever. Avoid >4 g/day.",
+      "Hydration: 2–3 L/day unless fluid-restricted.",
+      "Rest; tepid sponging if temp high."
+    ], warn:["Fever >3 days","Rash + breathing trouble","Confusion or dehydration"]
+  },
+  flu   : { plan:[
+      "Paracetamol or ibuprofen (if allowed).",
+      "Warm fluids, rest, honey/lemon for throat."
+    ], warn:["Breathlessness","O2 saturation <94%","Chest pain"]
+  },
+  covid : { plan:[
+      "Paracetamol for fever/discomfort.",
+      "Isolate, mask; monitor O2 with pulse oximeter.",
+      "Hydration + nutrition; contact clinician for antivirals eligibility."
+    ], warn:["O2 < 94%","Persistent breathlessness","High-risk comorbidities"]
+  },
+  dengue: { plan:[
+      "Paracetamol only (avoid aspirin/ibuprofen).",
+      "Oral rehydration; watch platelets/bleeding signs."
+    ], warn:["Bleeding/gum spots","Severe abdominal pain","Lethargy"]
+  },
+  malaria:{ plan:[
+      "Antimalarials per prescription (e.g., ACT).",
+      "Hydration; avoid missing doses."
+    ], warn:["Persistent vomiting","Seizures","Altered sensorium"]
+  },
+  typhoid:{ plan:[
+      "Antibiotics per doctor (e.g., cefixime/azithromycin).",
+      "Soft diet; fluids; hygiene."
+    ], warn:["Abdominal distension","Bleeding","High fever >5 days"]
+  },
+  uti:{ plan:[
+      "Antibiotics per culture; hydration 2–3 L/day.",
+      "Paracetamol for fever/discomfort."
+    ], warn:["Flank pain","Chills with high fever","Pregnancy with fever"]
+  },
+  postop:{ plan:[
+      "Follow hospital discharge orders strictly.",
+      "Paracetamol as prescribed; wound care; temperature checks."
+    ], warn:["Redness/swelling at site","Pus/fever >38.3°C","Severe pain"]
+  }
+};
+
+function parseBP(v){
+  const m = (v||"").match(/(\d{2,3})\s*\/\s*(\d{2,3})/);
+  if(!m) return null;
+  return {sys:+m[1], dia:+m[2]};
+}
+
+function bpCategory(bp){
+  if(!bp) return "unknown";
+  const {sys,dia}=bp;
+  if(sys<120 && dia<80) return "normal";
+  if((sys>=120&&sys<=129) && dia<80) return "elevated";
+  if((sys>=130&&sys<=139) || (dia>=80&&dia<=89)) return "stage-1";
+  if(sys>=140 || dia>=90) return "stage-2";
+  return "unknown";
+}
+
+$("#goAnalyze").addEventListener("click", ()=>{
+  const name = $("#name").value.trim();
+  const age  = +$("#age").value;
+  const weight = +$("#weight").value;
+  const bpRaw = $("#bp").value.trim();
+  const fever = $("#fever").value;
+
+  if(!name||!age||!weight||!bpRaw||!fever){
+    toast("Please complete all fields on Start."); return;
+  }
+  const bp = parseBP(bpRaw);
+  const cat = bpCategory(bp);
+
+  const lines = [];
+  lines.push(`👋 Hi <b>${name}</b> — age <b>${age}</b>, weight <b>${weight} kg</b>.`);
+  if(bp){
+    lines.push(`🩺 BP: <b>${bp.sys}/${bp.dia}</b> → <b>${cat}</b>`);
+    if(cat==="stage-2") lines.push("⚠️ Consider timely medical review regarding BP control.");
+    if(cat==="elevated"||cat==="stage-1") lines.push("🌿 Salt moderation, daily walks, and sleep hygiene can help.");
+  }
+  const fg = FEVER_GUIDE[fever];
+  const planHTML = fg? `<ul>`+fg.plan.map(p=>`<li>${p}</li>`).join("")+`</ul>` : "Select a fever type.";
+  const warnHTML = fg? `<ul>`+fg.warn.map(p=>`<li>${p}</li>`).join("")+`</ul>` : "";
+
+  $("#analysisBlock").innerHTML = lines.map(l=>`<div>${l}</div>`).join("") + `<div style="height:10px"></div>` +
+    `<div class="muted">This plan is supportive, not a substitute for care.</div>`;
+  $("#carePlan").innerHTML = `<div><b>Supportive Plan for: ${fever.toUpperCase()}</b></div>${planHTML}
+    <div style="height:8px"></div><div><b>Seek help urgently if:</b>${warnHTML}</div>`;
+
+  // jump to Analyzer tab
+  $$("aside .nav button").forEach(b=>b.classList.remove("active"));
+  $$("aside .nav button[data-page='analyze']")[0].classList.add("active");
+  $$(".page").forEach(p=>p.classList.remove("active")); $("#analyze").classList.add("active");
+
+  // save
+  store("profile",{name,age,weight,bp:bpRaw,fever});
+  toast("Analysis ready.");
+});
+
+/* Add plan meds into schedule (safe defaults) */
+$("#addPlanMeds").addEventListener("click", ()=>{
+  const prof = load("profile", null);
+  if(!prof || !prof.fever){ toast("Run Analyze first."); return; }
+  const fever = prof.fever;
+  let bundle = [];
+  if(fever==="dengue"||fever==="viral"||fever==="flu"||fever==="covid"){
+    bundle.push({n:"Paracetamol",d:"500 mg",freq:8,t:nextClock("08:00")});
+  }
+  if(fever==="malaria"||fever==="typhoid"||fever==="uti"||fever==="postop"){
+    bundle.push({n:"Doctor-prescribed antibiotic/antimalarial",d:"per Rx",freq:12,t:nextClock("09:00")});
+  }
+  bundle.forEach(addReminder);
+  toast("Plan medicines added.");
+  renderSchedule();
+});
+
+/* ========= MEDICINES & REMINDERS ========= */
+let reminders = load("reminders", []);
+
+function nextClock(hhmm){
+  // returns next Date ISO string today/tomorrow at given hh:mm
+  const [h,m] = hhmm.split(":").map(Number);
+  const d = new Date(); d.setSeconds(0,0); d.setHours(h,m,0,0);
+  if(d < new Date()) d.setDate(d.getDate()+1);
+  return d.toISOString();
+}
+
+function addReminder(obj){
+  // obj: {n,d,freq,t(ISO)} freq:"once"|6|8|12|24
+  const id = crypto.getRandomValues(new Uint32Array(1))[0].toString(16);
+  reminders.push({id,...obj,done:[]});
+  store("reminders",reminders);
+  scheduleTimeoutFor(id);
+}
+
+$("#addMed").addEventListener("click", ()=>{
+  const n = $("#medName").value.trim();
+  const d = $("#medDose").value.trim();
+  const f = $("#medFreq").value;
+  const tm = $("#medTime").value;
+  if(!n||!d||!tm){ toast("Add name, dose, and time."); return; }
+  const whenISO = nextClock(tm);
+  addReminder({n,d,freq:f,t:whenISO});
+  renderSchedule();
+  toast("Reminder added.");
+});
+$("#clearMeds").addEventListener("click", ()=>{
+  if(!confirm("Clear all reminders?")) return;
+  reminders = []; store("reminders", reminders); renderSchedule(); toast("Cleared.");
+});
+
+function formatTime(iso){ const d=new Date(iso); return d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})+" • "+d.toDateString().replace(/^\w+ /,''); }
+function renderSchedule(){
+  const wrap = $("#scheduleList");
+  if(reminders.length===0){ wrap.innerHTML = "<div class='muted'>No reminders yet.</div>"; return;}
+  wrap.innerHTML = reminders.map(r=>`
+    <div class="panel" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
+        <div><b>${r.n}</b> — ${r.d} <span class="muted">(${r.freq==="once"?"once":`every ${r.freq}h`})</span></div>
+        <button class="btn smallBtn" data-done="${r.id}">Taken</button>
+      </div>
+      <div class="muted small">Next: ${formatTime(r.t)}</div>
+      ${r.done?.length? `<div class="small">History: ${r.done.slice(-5).map(x=>new Date(x).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})).join(", ")}</div>`:""}
+      <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn ghost smallBtn" data-snooze="${r.id}">Snooze 10m</button>
+        <button class="btn ghost smallBtn" data-del="${r.id}">Delete</button>
+      </div>
+    </div>`).join("");
+  // wire buttons
+  wrap.querySelectorAll("[data-done]").forEach(b=>b.onclick=()=>markTaken(b.dataset.done));
+  wrap.querySelectorAll("[data-snooze]").forEach(b=>b.onclick=()=>snooze(b.dataset.snooze));
+  wrap.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>delReminder(b.dataset.del));
+}
+renderSchedule();
+
+/* mark taken -> tokens + adherence */
+function markTaken(id){
+  const r = reminders.find(x=>x.id===id); if(!r) return;
+  r.done.push(new Date().toISOString());
+  // set next time:
+  if(r.freq==="once"){ /* no repeat */ }
+  else {
+    const next = new Date(r.t); next.setHours(next.getHours()+(+r.freq)); r.t = next.toISOString();
+    scheduleTimeoutFor(id);
+  }
+  store("reminders",reminders);
+  setTokens(tokens+3);
+  updateAdherence(1);
+  renderSchedule();
+  toast("Dose logged. +3 HT ⭐");
+}
+function snooze(id){
+  const r = reminders.find(x=>x.id===id); if(!r) return;
+  const next = new Date(); next.setMinutes(next.getMinutes()+10,0,0); r.t = next.toISOString();
+  store("reminders",reminders); scheduleTimeoutFor(id); renderSchedule(); toast("Snoozed 10 minutes.");
+}
+function delReminder(id){
+  reminders = reminders.filter(r=>r.id!==id); store("reminders",reminders); renderSchedule(); toast("Deleted.");
+}
+
+/* ========= NOTIFICATIONS + SOUND ========= */
+const sounds = {
+  chime: $("#snd-chime"),
+  bell:  $("#snd-bell"),
+  ping:  $("#snd-ping")
+};
+function playSound(){
+  const key = $("#soundSelect")?.value || "chime";
+  const el = sounds[key] || sounds.chime;
+  try{ el.currentTime = 0; el.play(); }catch{}
+}
+
+$("#enableNotif").addEventListener("click", ()=> {
+  if(Notification.permission === "granted"){ toast("Notifications already enabled."); return;}
+  Notification.requestPermission().then(p=>{
+    toast(p==="granted" ? "Notifications enabled." : "Notifications denied.");
+  });
+});
+
+/* simple toast */
+function toast(msg){
+  const t=$("#toast"); t.textContent = msg; t.style.display="block";
+  setTimeout(()=>t.style.display="none", 2600);
+}
+
+/* schedule timeouts + polling fallback */
+const timeouts = new Map(); // id -> timeout
+function scheduleTimeoutFor(id){
+  const r = reminders.find(x=>x.id===id); if(!r) return;
+  // clear old
+  if(timeouts.has(id)){ clearTimeout(timeouts.get(id)); timeouts.delete(id); }
+  const now = Date.now(), tgt = new Date(r.t).getTime();
+  const delay = Math.max(0, tgt - now);
+  const h = setTimeout(()=> fireReminder(id), delay);
+  timeouts.set(id, h);
+}
+
+function fireReminder(id){
+  const r = reminders.find(x=>x.id===id); if(!r) return;
+  // in-page toast + sound
+  playSound();
+  toast(`⏰ ${r.n} — ${r.d} time!`);
+  if(Notification.permission==="granted"){
+    new Notification("Medicine Reminder", { body: `${r.n} — ${r.d}`, silent:true });
+  }
+  // auto-advance next if repeating
+  if(r.freq!=="once"){
+    const next = new Date(r.t); next.setHours(next.getHours()+(+r.freq)); r.t = next.toISOString();
+    store("reminders",reminders); renderSchedule(); scheduleTimeoutFor(id);
+  }
+}
+
+/* Poll every minute in case the tab slept */
+setInterval(()=>{
+  const now = Date.now();
+  reminders.forEach(r=>{
+    const tgt = new Date(r.t).getTime();
+    if(tgt <= now + 1000 && tgt >= now - 60000){ // fire if within ±60s
+      fireReminder(r.id);
+    }
+  });
+}, 60000);
+
+/* restore on load */
+reminders.forEach(r=>scheduleTimeoutFor(r.id));
+
+/* ========= DASHBOARD: adherence & chart ========= */
+let adherence = load("adherence",{today:0, history:[]}); // history last 7 days counts
+function updateAdherence(delta){
+  adherence.today = Math.max(0, Math.min(10, adherence.today + delta));
+  store("adherence", adherence); drawRing(); drawChart();
+}
+/* new day rollover */
+function dailyTick(){
+  const key = "lastDay";
+  const last = load(key, null);
+  const todayStr = new Date().toDateString();
+  if(last !== todayStr){
+    // push today into history (cap 7)
+    if(last){ adherence.history.push(adherence.today); if(adherence.history.length>7) adherence.history.shift(); }
+    adherence.today = 0; store("adherence",adherence); store(key, todayStr);
+  }
+}
+dailyTick(); drawRing(); drawChart();
+function ringPct(){ return Math.round((adherence.today/10)*100) }
+function drawRing(){
+  const pct = ringPct(); $("#adherencePct").textContent = pct+"%";
+  const total= 2*Math.PI*58; const arc = total * pct/100;
+  $("#ringArc").setAttribute("stroke-dasharray", `${arc} ${total-arc}`);
+}
+function drawChart(){
+  const c = $("#adherenceChart"); const ctx = c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+  const data = [...adherence.history, adherence.today];
+  const max = 10, step = c.width/(data.length-1||1);
+  ctx.strokeStyle = "#243"; ctx.lineWidth = 1; // grid
+  for(let i=0;i<=max;i+=2){ const y=c.height - (i/max)*c.height; ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(c.width,y); ctx.stroke(); }
+  ctx.strokeStyle = "#00e0ff"; ctx.lineWidth = 3;
+  ctx.beginPath();
+  data.forEach((v,i)=>{
+    const x = i*step; const y = c.height - (v/max)*c.height;
+    if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+  });
+  ctx.stroke();
+  // points
+  ctx.fillStyle = "#9dff6b";
+  data.forEach((v,i)=>{ const x=i*step; const y=c.height - (v/max)*c.height; ctx.beginPath(); ctx.arc(x,y,3,0,Math.PI*2); ctx.fill(); });
+}
+
+$("#logTaken").addEventListener("click", ()=>{ updateAdherence(1); setTokens(tokens+3); });
+$("#earnHydrate").addEventListener("click", ()=>{ setTokens(tokens+1); toast("Hydration bonus +1 HT") });
+
+/* Streaks (very simple) */
+function updateStreak(){
+  const today = new Date().toDateString();
+  let s = load("streak",{last: null, count:0});
+  if(s.last !== today){ s.last = today; s.count += 1; store("streak", s); }
+  $("#streakLine").textContent = `Streak: ${s.count} days`;
+}
+updateStreak();
+
+/* ========= NOTES ========= */
+$("#saveNotes").addEventListener("click", ()=>{
+  store("notes", {fever: $("#feverNotes").value, discharge: $("#dischargeNotes").value});
+  $("#saveStatus").textContent = "Saved locally ✅";
+});
+
+/* ========= CHAT ========= */
+function addMsg(who, text){
+  const div = document.createElement("div"); div.className = "msg "+(who==="bot"?"bot":"user"); div.innerHTML = text;
+  $("#chatbox").appendChild(div); $("#chatbox").scrollTop = $("#chatbox").scrollHeight;
+}
+function bot(text){ addMsg("bot", text) }
+function user(text){ addMsg("user", text) }
+
+$("#sendChat").addEventListener("click", ()=>{
+  const t = $("#chatInput").value.trim(); if(!t) return;
+  $("#chatInput").value=""; user(t);
+  setTimeout(()=> bot(reply(t)), 500);
+});
+function reply(t){
+  const s=t.toLowerCase();
+  if(s.includes("hello")||s.includes("hi")) return "Hey! I’m here to help. Tell me your fever type and if you need med reminders.";
+  if(s.includes("paracetamol")) return "General adult guidance: 500 mg as needed for fever (max 4,000 mg/day). Always follow your doctor’s exact advice.";
+  if(s.includes("bp")||s.match(/\d+\/\d+/)) return "If your BP readings are repeatedly ≥140/90, please arrange a medical review. Meanwhile: reduce salt, regular walks, and don’t skip prescribed meds.";
+  if(s.includes("dengue")) return "Dengue: paracetamol only, avoid ibuprofen/aspirin. Hydrate and monitor for bleeding or severe pain — seek care if present.";
+  if(s.includes("malaria")) return "Malaria: antimalarials exactly per prescription (often Artemisinin-based combination). Don’t miss doses.";
+  if(s.includes("token")) return "Earn Health Tokens by logging doses, hydrating, and finishing missions. ⭐";
+  return "I can chat about reminders, fever care basics, hydration, and gentle routines. Try: “set paracetamol every 8 hours at 08:00”.";
+}
+
+/* ========= CALM ========= */
+let breathTimer=null;
+$("#startBreath").addEventListener("click", ()=>{
+  const orb = $("#breather");
+  let t=0; const dur=60; clearInterval(breathTimer);
+  breathTimer=setInterval(()=>{
+    t++; const phase = (t%8); // 4s in, 4s out
+    const scale = phase<4 ? (1+0.12*phase) : (1+0.12*(8-phase));
+    orb.style.transform=`scale(${scale})`;
+    if(t>=dur){ clearInterval(breathTimer); orb.style.transform="scale(1)"; toast("Nice breathing! +2 HT"); setTokens(tokens+2); }
+  },1000);
+});
+
+/* ========= SETTINGS ========= */
+$("#wipeData").addEventListener("click",()=>{
+  if(!confirm("Wipe all local data?")) return;
+  localStorage.clear(); location.reload();
+});
+
+/* ========= Keyboard niceties ========= */
+$("#chatInput").addEventListener("keydown",e=>{ if(e.key==="Enter") $("#sendChat").click(); });
+
+/* ========= initial messages ========= */
+bot("Welcome to <b>Health Universe</b> 🌌 — set your details on <i>Start</i>, run <b>Analyze</b>, then add reminders in <b>Medicines</b>. Earn <b>Health Tokens</b> as you go!");
+</script>
+</body>
+</html>
